@@ -7,33 +7,22 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
     
+    // MARK: - Variables
     // array that holds the items in the list
     var itemArray = [Item]()
-    // path to the plist for persisted storage
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    // the context of the database
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     
     // MARK: - viewDidLoad
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // 3 examples to start with
-        let newItem = Item()
-        newItem.title = "Kaufe Äpfel"
-        itemArray.append(newItem)
-        
-        let newItem2 = Item()
-        newItem2.title = "Kaufe Nudeln"
-        itemArray.append(newItem2)
-        
-        let newItem3 = Item()
-        newItem3.title = "Kaufe Getränke"
-        itemArray.append(newItem3)
-        
-        // get the saved items
+        // get the saved items from database
         loadItems()
         
     }
@@ -60,12 +49,13 @@ class TodoListViewController: UITableViewController {
     // MARK: - Add new Items
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
-        // var that will take the String from alertTextField inside the alert
         var textField = UITextField()
         let alert = UIAlertController(title: "Neue Aufgabe:", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Hinzufügen", style: .default) { (action) in
-            let newItem = Item()
+            
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             self.itemArray.append(newItem)
             self.saveItems()
         }
@@ -79,24 +69,20 @@ class TodoListViewController: UITableViewController {
     
     // MARK: - Model manipulation functions
     func saveItems() {
-        let encoder = PropertyListEncoder()
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Error encoding itemArray, \(error)")
+            print("Error saving context: \(error)")
         }
         self.tableView.reloadData()
     }
     
     func loadItems() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error decoding itemArray, \(error)")
-            }
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error fetching data from context, \(error)")
         }
     }
     
