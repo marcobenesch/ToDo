@@ -107,11 +107,42 @@ class TodoListViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//        context.delete(itemArray[indexPath.row])
-//        itemArray.remove(at: indexPath.row)
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         saveItems()
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    // SwipingCell functions
+    override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let important = importantAction(at: indexPath)
+        return UISwipeActionsConfiguration(actions: [important])
+    }
+    
+    override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = deleteAction(at: indexPath)
+        return UISwipeActionsConfiguration(actions: [delete])
+    }
+    
+    func importantAction(at indexPath: IndexPath) -> UIContextualAction {
+        let item = itemArray[indexPath.row]
+        let action = UIContextualAction(style: .normal, title: "Important") { (action, view, completion) in
+            item.isImportant = !item.isImportant
+            completion(true)
+        }
+        action.image = UIImage(named: "bell")
+        action.backgroundColor = item.isImportant ? .purple : .gray
+        return action
+    }
+    
+    func deleteAction(at indexPath: IndexPath) -> UIContextualAction {
+        let action = UIContextualAction(style: .destructive, title: "Delete") { (action, view, completion) in
+            self.context.delete(self.itemArray[indexPath.row])
+            self.itemArray.remove(at: indexPath.row)
+            completion(true)
+        }
+        action.image = UIImage(named: "trash")
+        action.backgroundColor = .red
+        return action
     }
     
     // MARK: - Add new Items
